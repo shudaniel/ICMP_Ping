@@ -22,6 +22,12 @@ PingSocket::PingSocket(char * ipaddr, unsigned int port) {
     }
 }
 
+void PingSocket::pingForever() {
+    while (true) {
+        
+    }
+}
+
 void PingSocket::close() {
     ::close(sockfd);
 }

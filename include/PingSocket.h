@@ -11,6 +11,7 @@
 class PingSocket {
     public :
         PingSocket(char * ipaddr, unsigned int port);
+        void pingForever();
         void close();
     private:
         int sockfd;
