@@ -17,13 +17,13 @@
 class PingSocket {
     public:
         PingSocket(char * target, long int ttl);
-        void pingForever();
+        void pingForever() const;
     private:
         int sockfd;
         struct sockaddr_in address;
         bool dnsGetHostIp(char *hostname, struct sockaddr_in *address);
-        uint64_t getCurrentTime();
-        char * createPingPacket();
+        uint64_t getCurrentTime() const;
+        char * createPingPacket() const;
 };
 
 #endif

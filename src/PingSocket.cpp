@@ -41,7 +41,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
 }
 
 
-void PingSocket::pingForever() {
+void PingSocket::pingForever() const {
     uint64_t start, end;
     bool packetLost = false;
     struct sockaddr_in stubAddr;  // Store the return address here. It will not be used
@@ -89,11 +89,11 @@ bool PingSocket::dnsGetHostIp(char *hostname, struct sockaddr_in *address) {
     return true;
 }
 
-uint64_t PingSocket::getCurrentTime() {
+uint64_t PingSocket::getCurrentTime() const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-char * PingSocket::createPingPacket() {
+char * PingSocket::createPingPacket() const{
     char * packet = (char *)malloc(PING_PKT_SIZE * sizeof(char));
 
     return packet;
