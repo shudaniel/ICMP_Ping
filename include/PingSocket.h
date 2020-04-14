@@ -38,7 +38,7 @@ class PingSocket {
         bool GetHostIP(char *hostname);
         uint64_t getCurrentTime() const;
         unsigned short int checksum(struct echopacket packet) const;
-        bool sendPing(echopacket* packet, sockaddr *pingTargetAddr, bool printOutput) const;
+        bool sendPing(struct echopacket *packet, struct echopacket *receivedPacket, sockaddr *pingTargetAddr, socklen_t len, bool printOutput) const;
 };
 
 #endif

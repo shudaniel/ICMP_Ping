@@ -96,10 +96,11 @@ void PingSocket::pingForever() const {
         pingPacket.checksum = checksum(pingPacket);
 
         start = getCurrentTime();
-        if (!sendPing(&pingPacket, pingTargetAddr,true)) {
+
+        if (!sendPing(&pingPacket, &receivedPacket, pingTargetAddr, stublen, true)) {
             packetLost = true;
         }
-
+        
         end = getCurrentTime();
         if (!packetLost) {
             std::cout << "Received Echo" << std::endl << "RTT: " << (end - start) << " milliseconds" << std::endl;
@@ -267,11 +268,9 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     return ~checksum; // one's complement
 }
 
-bool PingSocket::sendPing(echopacket* packet, sockaddr *pingTargetAddr, bool printOutput) const
+bool PingSocket::sendPing(struct echopacket *pingPacket, struct echopacket *receivedPacket, sockaddr *pingTargetAddr, socklen_t len, bool printOutput) const
 {
-    socklen_t stublen = sizeof(pingTargetAddr);
-    struct echopacket receivedPacket;
-    int status = sendto(sockfd, packet, sizeof(*packet), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
+    int status = sendto(sockfd, pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
     if (status < 0)
     {
         if (printOutput) {
@@ -286,9 +285,9 @@ bool PingSocket::sendPing(echopacket* packet, sockaddr *pingTargetAddr, bool pri
         }
     }
 
-    if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
+    if (recvfrom(sockfd, receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &len) <= 0)
     {
-       return true;
+        return false;
     }
-    return false;
+    return true;
 }
