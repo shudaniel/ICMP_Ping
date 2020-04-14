@@ -12,15 +12,18 @@
 #include <unistd.h>
 #include <chrono>
 
+#define PING_PKT_SIZE 64
+
 class PingSocket {
     public:
-        PingSocket(char * target);
+        PingSocket(char * target, long int ttl);
         void pingForever();
     private:
         int sockfd;
         struct sockaddr_in address;
         bool dnsGetHostIp(char *hostname, struct sockaddr_in *address);
         uint64_t getCurrentTime();
+        char * createPingPacket();
 };
 
 #endif
