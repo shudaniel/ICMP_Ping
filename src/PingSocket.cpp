@@ -42,11 +42,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
         //     exit(1);
         // }
         
-        
-        // if (bind(sockfd, (sockaddr*) &address6, sizeof(address6)) < 0) {
-        //     std::cerr << "Error binding socket to port" << std::endl;
-        //     exit(1);
-        // }
+
     }
 
     // Set the timeout value for receives
@@ -76,12 +72,12 @@ void PingSocket::pingForever() const {
     if (useIPv4) {
         stublen = sizeof(stubAddr4);
         pingPacket.type = 8;
-        pingTargetAddr = (struct sockaddr *)address;
+        pingTargetAddr = (struct sockaddr *)&address;
     }
     else {
         stublen = sizeof(stubAddr6);
         pingPacket.type = 128;
-        pingTargetAddr = (struct sockaddr *)address6;
+        pingTargetAddr = (struct sockaddr *)&address6;
     }
     pingPacket.code = 0;
 
@@ -145,39 +141,13 @@ bool PingSocket::GetHostIP(char *hostname) {
 
     /* getaddrinfo() returns a list of address structures.
               Try each address until ping is successful */
-    /*
-    for (struct addrinfo *addr = res; addr != nullptr; addr = addr->ai_next)
-    {
-        if (addr->ai_family == AF_INET)
-        {
-            useIPv4 = true;
-            sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
-            if (sockfd < 0)
-            {
-                continue;
-            }
-            // use of reinterpret_cast preferred to C style cast
-            address = reinterpret_cast<sockaddr_in *>(addr->ai_addr);
-
-            inet_ntop(AF_INET, &addr->ai_addr, ip, INET_ADDRSTRLEN);
-            
-        }
-        else
-        {
-            useIPv4 = false;
-            sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
-            if (sockfd < 0)
-            {
-                continue;
-            }
-            address6 = reinterpret_cast<sockaddr_in6 *>(res->ai_addr);
-            inet_ntop(AF_INET6, &addr->ai_addr, ip, INET6_ADDRSTRLEN);
-        }
-        
-      
-
-    }
-    */
+    
+    // for (struct addrinfo *addr = res; addr != nullptr; addr = addr->ai_next)
+    // {
+    //     getnameinfo(addr->ai_addr, addr->ai_addrlen, ip, sizeof(ip), NULL, 0, NI_NUMERICHOST);
+    //     std::cout << "IP Address: " << ip << std::endl;
+    // }
+    
 
     if (res->ai_family == AF_INET) {
         std::cout << "IPv4" << std::endl;
@@ -188,20 +158,18 @@ bool PingSocket::GetHostIP(char *hostname) {
             std::cerr << "Could not create socket: " << sockfd << std::endl;
             exit(1);
         }
-        // use of reinterpret_cast preferred to C style cast
-        address = reinterpret_cast<sockaddr_in *>(res->ai_addr);
 
-        inet_ntop(AF_INET, &res->ai_addr, ip, INET_ADDRSTRLEN);
-        // address.sin_family = AF_INET;
-        // address.sin_port = htons(0);
-        // if (inet_pton(AF_INET, ip, &address.sin_addr) <= 0)
-        // {
+        getnameinfo(res->ai_addr, res->ai_addrlen, ip, sizeof(ip), NULL, 0, NI_NUMERICHOST);
 
-        //     std::cerr << "Invalid hostname/address error" << std::endl;
-        //     exit(1);
-        // }
+        address.sin_family = AF_INET;  
+        address.sin_port = htons(0);
+        if (inet_pton(AF_INET, ip, &address.sin_addr) <= 0)
+        {
 
-        // address.sin_addr.s_addr = *(long *)res->ai_addr;
+            std::cerr << "Invalid hostname/address error" << std::endl;
+            exit(1);
+        }
+
     }
     else {  
         std::cout << "IPv6" << std::endl;
@@ -212,32 +180,20 @@ bool PingSocket::GetHostIP(char *hostname) {
             std::cerr << "Could not create socket: " << sockfd << std::endl;
             exit(1);
         }
-        address6 = reinterpret_cast<sockaddr_in6 *>(res->ai_addr);
-        // inet_ntoa should be considered deprecated
-        inet_ntop(AF_INET6, &res->ai_addr, ip, INET6_ADDRSTRLEN);
 
-        // address6.sin6_family = AF_INET6;
-        // address6.sin6_port = htons(0); // Port 0
-        // // If target is not a hostname string, check if it is an IP address
-        // if (inet_pton(AF_INET6, ip, &address6.sin6_addr) <= 0)
-        // {
+        getnameinfo(res->ai_addr, res->ai_addrlen, ip, sizeof(ip), NULL, 0, NI_NUMERICHOST);
 
-        //     std::cerr << "Invalid hostname/address error" << std::endl;
-        //     exit(1);
-        // }
-        // address6.sin6_addr.s_addr = *(long *)res->ai_addr;
+        address6.sin6_family = AF_INET6;
+        address6.sin6_port = htons(0);
+        if (inet_pton(AF_INET6, ip, &address6.sin6_addr) <= 0)
+        {
+
+            std::cerr << "Invalid hostname/address error" << std::endl;
+            exit(1);
+        }
     }
     freeaddrinfo(res); /* No longer needed */
 
-    // struct hostent *host;
-    // if ((host = gethostbyname(hostname)) == NULL)
-    // {
-    //     // No ip for hostname
-    //     return false;
-    // }
-    // address.sin_family = host->h_addrtype;
-    // address.sin_port = htons(0);
-    // address.sin_addr.s_addr = *(long*)host->h_addr;
     std::cout << "Connecting to IP Address: " << ip << std::endl;
 
     return true;

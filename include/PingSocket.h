@@ -33,8 +33,8 @@ class PingSocket {
 
         int sockfd;
         bool useIPv4;
-        struct sockaddr_in* address;    // IPv4
-        struct sockaddr_in6* address6;  // IPv6
+        struct sockaddr_in address;    // IPv4
+        struct sockaddr_in6 address6;  // IPv6
         bool GetHostIP(char *hostname);
         uint64_t getCurrentTime() const;
         unsigned short int checksum(struct echopacket packet) const;
