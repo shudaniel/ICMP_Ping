@@ -66,19 +66,26 @@ void PingSocket::pingForever() const {
             std::cerr << "Error in sending ping" << std::endl;
             exit(1);
         }
+        
+        
         if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0,
-                     (struct sockaddr *)&stubAddr, &stubAddrlen) <= 0)
+                    (struct sockaddr *)&stubAddr, &stubAddrlen) <= 0)
         {
-            std::cerr << "Ping timeout! Packet Lost" << std::endl;
             packetLost = true;
         }
+        
         end = getCurrentTime();
         if (!packetLost) {
             std::cout << "RTT: " << (end - start) << " milliseconds" << std::endl;
         }
-        // Sleep 1 second before pinging again
+        else {
+            std::cerr << "Ping timeout! Packet Lost" << std::endl;
+        }
+    
         packetLost = false;
         ++seqnum;
+
+        // Sleep 1 second before pinging again
         sleep(1);
     }
 }
@@ -120,7 +127,6 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     checksum += packet.checksum;
     checksum += packet.id;
     checksum += packet.seqnum;
-
-
-    return ~checksum;
+    
+    return ~checksum; // one's complement
 }
