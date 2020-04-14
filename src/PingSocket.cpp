@@ -21,6 +21,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
         address.sin_port = htons(0); // Port 0
     }
 
+    // Set the TTL value
     if (setsockopt(sockfd, IPPROTO_IP, IP_TTL,
                    &ttl, sizeof(ttl)) != 0)
     {
@@ -45,15 +46,21 @@ void PingSocket::pingForever() const {
     uint64_t start, end;
     bool packetLost = false;
     struct sockaddr_in stubAddr;  // Store the return address here. It will not be used
-    char receivedPacket[PING_PKT_SIZE] = {0};
+    struct echopacket receivedPacket;
     socklen_t stubAddrlen = sizeof(stubAddr);
+    unsigned short int seqnum = 1;
+    struct echopacket pingPacket;
+    pingPacket.type = 8;
+    pingPacket.code = 0;
 
-    char* pingPacket  = createPingPacket();
     while (true) {
         std::cout << "Sending ping" << std::endl;
+        pingPacket.id = seqnum;
+        pingPacket.seqnum = seqnum;
+        pingPacket.checksum = checksum(pingPacket);
 
         start = getCurrentTime();
-        if (sendto(sockfd, "test", PING_PKT_SIZE, 0, (sockaddr *)&address, (socklen_t)sizeof(address)) < 0)
+        if (sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, (sockaddr *)&address, (socklen_t)sizeof(address)) < 0)
         {
             std::cerr << "Error in sending ping" << std::endl;
             exit(1);
@@ -70,6 +77,7 @@ void PingSocket::pingForever() const {
         }
         // Sleep 1 second before pinging again
         packetLost = false;
+        ++seqnum;
         sleep(1);
     }
 }
@@ -93,8 +101,10 @@ uint64_t PingSocket::getCurrentTime() const {
     return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
-char * PingSocket::createPingPacket() const{
-    char * packet = (char *)malloc(PING_PKT_SIZE * sizeof(char));
 
-    return packet;
+u_int16_t PingSocket::checksum(struct echopacket packet) const {
+    u_int16_t checksum = 0;
+
+
+    return checksum;
 }

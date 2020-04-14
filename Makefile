@@ -1,6 +1,6 @@
 
-CC=g++ -std=c++11
-FLAGS = -Iinclude
+CC=g++
+FLAGS = -std=c++11 -Iinclude
 INCLUDE = $(wildcard include/*.h)
 SOURCES = $(wildcard src/*.cpp)
 OBJECTS = $(SOURCES:src/%.cpp=build/%.o)
