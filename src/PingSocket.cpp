@@ -40,11 +40,18 @@ PingSocket::PingSocket(char * target, long int ttl) {
             exit(1);
         }
 
-        // // Set the TTL value
-        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
+        // Set the TTL value
+        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_HOPLIMIT,
         //                &ttl, sizeof(ttl)) != 0)
         // {
-        //     std::cerr << "Setting socket unicast options failed" << std::endl;
+        //     std::cerr << "Setting socket hoplimit options failed" << std::endl;
+        //     exit(1);
+        // }
+
+        // int offset = 2;
+        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) < 0)
+        // {
+        //     std::cerr << "Could not set checksum" << std::endl;
         //     exit(1);
         // }
 
@@ -54,7 +61,12 @@ PingSocket::PingSocket(char * target, long int ttl) {
         //     std::cerr << "Setting socket multicast options failed" << std::endl;
         //     exit(1);
         // }
-
+        
+        
+        // if (bind(sockfd, (sockaddr*) &address6, sizeof(address6)) < 0) {
+        //     std::cerr << "Error binding socket to port" << std::endl;
+        //     exit(1);
+        // }
         useIPv4 = false;
     }
 
@@ -90,7 +102,7 @@ void PingSocket::pingForever() const {
     else {
         stublen = sizeof(stubAddr6);
         pingPacket.type = 128;
-        pingTargetAddr = (struct sockaddr *)&stubAddr6;
+        pingTargetAddr = (struct sockaddr *)&address6;
     }
     pingPacket.code = 0;
 
@@ -148,7 +160,7 @@ bool PingSocket::GetHostIPv4(char *hostname) {
     address.sin_family = host->h_addrtype;
     address.sin_port = htons(0);
     address.sin_addr.s_addr = *(long*)host->h_addr;
-    std::cout << "Connecting to IP Address: " << inet_ntoa(* (struct in_addr *) host->h_addr) << std::endl;
+    // std::cout << "Connecting to IP Address: " << inet_ntoa(* (struct in_addr *) host->h_addr) << std::endl;
 
     return true;
 }
@@ -169,10 +181,6 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         If the two checksums do not match then an error has occurred.
     */
     u_int16_t checksum = 0;
-    if (!useIPv4) {
-        // For IPv6, you must prepend the pseudo header
-
-    }
  
     checksum += packet.type;
     checksum += packet.code;
