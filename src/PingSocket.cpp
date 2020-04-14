@@ -1,7 +1,7 @@
 #include "PingSocket.h"
 
 PingSocket::PingSocket(char * target, long int ttl) {
-    sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
     if (sockfd < 0) {
         std::cerr << "Could not create socket" << std::endl;
         exit(1);
