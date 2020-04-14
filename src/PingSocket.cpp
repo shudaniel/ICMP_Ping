@@ -213,6 +213,10 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         received, the checksum is again computed and verified against the checksum field. 
         If the two checksums do not match then an error has occurred.
     */
+    if (!useIPv4) {
+        // Special checksum for ipv6
+        return 0;
+    }
     u_int16_t checksum = 0;
  
     checksum += packet.type;
