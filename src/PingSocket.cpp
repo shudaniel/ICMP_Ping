@@ -3,15 +3,12 @@
 PingSocket::PingSocket(char * target, long int ttl) {
 
     // First try to convert from a hostname string and set the address
-    if (GetHostIPv4(target))
-    {
-        sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
-        if (sockfd < 0)
-        {
-            std::cerr << "Could not create socket" << std::endl;
-            exit(1);
-        }
+    if (!GetHostIP(target)) {
+        exit(1);
+    }
 
+    if (useIPv4)
+    {
         // Set the TTL value
         if (setsockopt(sockfd, IPPROTO_IP, IP_TTL,
                        &ttl, sizeof(ttl)) != 0)
@@ -20,26 +17,8 @@ PingSocket::PingSocket(char * target, long int ttl) {
             exit(1);
         }
 
-        useIPv4 = true;
     }
     else {
-        std::cerr << "Not IPv4. Try IPv6" << std::endl;
-        // Check if it is IPv6
-        if (inet_pton(AF_INET6, target, &address6.sin6_addr) <= 0)
-        {
-            std::cerr << "Invalid hostname/address error" << std::endl;
-            exit(1);
-        }
-        address6.sin6_family = AF_INET6;
-        address6.sin6_port = htons(0); // Port 0
-
-        sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
-        if (sockfd < 0)
-        {   
-            std::cerr << "Could not create socket: " << sockfd << std::endl;
-            exit(1);
-        }
-
         // Set the TTL value
         // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_HOPLIMIT,
         //                &ttl, sizeof(ttl)) != 0)
@@ -49,9 +28,10 @@ PingSocket::PingSocket(char * target, long int ttl) {
         // }
 
         // int offset = 2;
-        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) < 0)
+        // int ret = setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset));
+        // if (ret < 0)
         // {
-        //     std::cerr << "Could not set checksum" << std::endl;
+        //     std::cerr << "Could not set checksum: " << ret << std::endl;
         //     exit(1);
         // }
 
@@ -67,7 +47,6 @@ PingSocket::PingSocket(char * target, long int ttl) {
         //     std::cerr << "Error binding socket to port" << std::endl;
         //     exit(1);
         // }
-        useIPv4 = false;
     }
 
     // Set the timeout value for receives
@@ -91,18 +70,18 @@ void PingSocket::pingForever() const {
     struct sockaddr_in6 stubAddr6; // Store the return address here. It will not be used
     struct echopacket receivedPacket;
 
-    struct sockaddr * pingTargetAddr;
+    struct sockaddr *pingTargetAddr;
     socklen_t stublen;
     struct echopacket pingPacket;
     if (useIPv4) {
         stublen = sizeof(stubAddr4);
         pingPacket.type = 8;
-        pingTargetAddr = (struct sockaddr *)&address;
+        pingTargetAddr = (struct sockaddr *)address;
     }
     else {
         stublen = sizeof(stubAddr6);
         pingPacket.type = 128;
-        pingTargetAddr = (struct sockaddr *)&address6;
+        pingTargetAddr = (struct sockaddr *)address6;
     }
     pingPacket.code = 0;
 
@@ -117,19 +96,7 @@ void PingSocket::pingForever() const {
         pingPacket.checksum = checksum(pingPacket);
 
         start = getCurrentTime();
-        status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
-        if (status < 0)
-        {
-            std::cerr << "Error in sending ping: " << status << std::endl;
-            exit(1);
-        }
-        else
-        {
-            std::cout << "Packet sent" << std::endl;
-        }
-
-        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
-        {
+        if (!sendPing(&pingPacket, pingTargetAddr,true)) {
             packetLost = true;
         }
 
@@ -150,17 +117,127 @@ void PingSocket::pingForever() const {
     }
 }
 
-bool PingSocket::GetHostIPv4(char *hostname) {
-    struct hostent *host;
-    if ((host = gethostbyname(hostname)) == NULL)
-    {
-        // No ip for hostname
+bool PingSocket::GetHostIP(char *hostname) {
+    struct addrinfo hints;
+    struct addrinfo *res;
+    char ip[INET6_ADDRSTRLEN] = {0};
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = 0;
+    hints.ai_flags = AI_PASSIVE;
+    hints.ai_canonname = NULL;
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
+
+    if (getaddrinfo(hostname, 0, &hints, &res) != 0) {
         return false;
     }
-    address.sin_family = host->h_addrtype;
-    address.sin_port = htons(0);
-    address.sin_addr.s_addr = *(long*)host->h_addr;
-    // std::cout << "Connecting to IP Address: " << inet_ntoa(* (struct in_addr *) host->h_addr) << std::endl;
+
+    if (res == NULL)
+    { /* No address succeeded */
+        fprintf(stderr, "Could not connect\n");
+        exit(EXIT_FAILURE);
+    }
+
+    /* getaddrinfo() returns a list of address structures.
+              Try each address until ping is successful */
+    /*
+    for (struct addrinfo *addr = res; addr != nullptr; addr = addr->ai_next)
+    {
+        if (addr->ai_family == AF_INET)
+        {
+            useIPv4 = true;
+            sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+            if (sockfd < 0)
+            {
+                continue;
+            }
+            // use of reinterpret_cast preferred to C style cast
+            address = reinterpret_cast<sockaddr_in *>(addr->ai_addr);
+
+            inet_ntop(AF_INET, &addr->ai_addr, ip, INET_ADDRSTRLEN);
+            
+        }
+        else
+        {
+            useIPv4 = false;
+            sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
+            if (sockfd < 0)
+            {
+                continue;
+            }
+            address6 = reinterpret_cast<sockaddr_in6 *>(res->ai_addr);
+            inet_ntop(AF_INET6, &addr->ai_addr, ip, INET6_ADDRSTRLEN);
+        }
+        
+      
+
+    }
+    */
+
+    if (res->ai_family == AF_INET) {
+        std::cout << "IPv4" << std::endl;
+        useIPv4 = true;
+        sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+        if (sockfd < 0)
+        {
+            std::cerr << "Could not create socket: " << sockfd << std::endl;
+            exit(1);
+        }
+        // use of reinterpret_cast preferred to C style cast
+        address = reinterpret_cast<sockaddr_in *>(res->ai_addr);
+
+        inet_ntop(AF_INET, &res->ai_addr, ip, INET_ADDRSTRLEN);
+        // address.sin_family = AF_INET;
+        // address.sin_port = htons(0);
+        // if (inet_pton(AF_INET, ip, &address.sin_addr) <= 0)
+        // {
+
+        //     std::cerr << "Invalid hostname/address error" << std::endl;
+        //     exit(1);
+        // }
+
+        // address.sin_addr.s_addr = *(long *)res->ai_addr;
+    }
+    else {  
+        std::cout << "IPv6" << std::endl;
+        useIPv4 = false;
+        sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
+        if (sockfd < 0)
+        {
+            std::cerr << "Could not create socket: " << sockfd << std::endl;
+            exit(1);
+        }
+        address6 = reinterpret_cast<sockaddr_in6 *>(res->ai_addr);
+        // inet_ntoa should be considered deprecated
+        inet_ntop(AF_INET6, &res->ai_addr, ip, INET6_ADDRSTRLEN);
+
+        // address6.sin6_family = AF_INET6;
+        // address6.sin6_port = htons(0); // Port 0
+        // // If target is not a hostname string, check if it is an IP address
+        // if (inet_pton(AF_INET6, ip, &address6.sin6_addr) <= 0)
+        // {
+
+        //     std::cerr << "Invalid hostname/address error" << std::endl;
+        //     exit(1);
+        // }
+        // address6.sin6_addr.s_addr = *(long *)res->ai_addr;
+    }
+    freeaddrinfo(res); /* No longer needed */
+
+    // struct hostent *host;
+    // if ((host = gethostbyname(hostname)) == NULL)
+    // {
+    //     // No ip for hostname
+    //     return false;
+    // }
+    // address.sin_family = host->h_addrtype;
+    // address.sin_port = htons(0);
+    // address.sin_addr.s_addr = *(long*)host->h_addr;
+    std::cout << "Connecting to IP Address: " << ip << std::endl;
 
     return true;
 }
@@ -188,4 +265,30 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     checksum += packet.id;
     checksum += packet.seqnum;
     return ~checksum; // one's complement
+}
+
+bool PingSocket::sendPing(echopacket* packet, sockaddr *pingTargetAddr, bool printOutput) const
+{
+    socklen_t stublen = sizeof(pingTargetAddr);
+    struct echopacket receivedPacket;
+    int status = sendto(sockfd, packet, sizeof(*packet), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
+    if (status < 0)
+    {
+        if (printOutput) {
+            std::cerr << "Error in sending ping: " << status << std::endl;
+        }
+        return false;
+    }
+    else
+    {
+        if (printOutput) {
+            std::cout << "Packet sent" << std::endl;
+        }
+    }
+
+    if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
+    {
+       return true;
+    }
+    return false;
 }
