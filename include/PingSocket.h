@@ -1,6 +1,8 @@
 #ifndef PING_SOCKET_H
 #define PING_SOCKET_H
 
+#define __APPLE_USE_RFC_3542
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -24,8 +26,7 @@ class PingSocket {
         // Echo request format:  https://en.wikipedia.org/wiki/Ping_(networking_utility)#ICMP_packet
         // Packet format is also defined here: https://www.cymru.com/Documents/ip_icmp.h
         struct echopacket {
-            u_int8_t type;
-            u_int8_t code;
+            u_int16_t type_and_code;
             u_int16_t checksum;
             u_int16_t id;
             u_int16_t seqnum;

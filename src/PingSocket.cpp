@@ -20,25 +20,20 @@ PingSocket::PingSocket(char * target, long int ttl) {
     }
     else {
         // Set the TTL value
-        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_HOPLIMIT,
-        //                &ttl, sizeof(ttl)) != 0)
-        // {
-        //     std::cerr << "Setting socket hoplimit options failed" << std::endl;
-        //     exit(1);
-        // }
+        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_HOPLIMIT,
+                       &ttl, sizeof(ttl)) != 0)
+        {
+            std::cerr << "Setting socket hoplimit options failed" << std::endl;
+            exit(1);
+        }
 
+        // Kernel will calculate checksum
+        // This is only supported on SOCK_RAW
         // int offset = 2;
         // int ret = setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset));
         // if (ret < 0)
         // {
         //     std::cerr << "Could not set checksum: " << ret << std::endl;
-        //     exit(1);
-        // }
-
-        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
-        //                &ttl, sizeof(ttl)) != 0)
-        // {
-        //     std::cerr << "Setting socket multicast options failed" << std::endl;
         //     exit(1);
         // }
         
@@ -70,15 +65,14 @@ void PingSocket::pingForever() const {
     struct echopacket pingPacket;
     if (useIPv4) {
         stublen = sizeof(stubAddr4);
-        pingPacket.type = 8;
+        pingPacket.type_and_code = 8;
         pingTargetAddr = (struct sockaddr *)&address;
     }
     else {
         stublen = sizeof(stubAddr6);
-        pingPacket.type = 128;
+        pingPacket.type_and_code = 128;
         pingTargetAddr = (struct sockaddr *)&address6;
     }
-    pingPacket.code = 0;
 
     unsigned short int seqnum = 1;
 
@@ -98,7 +92,7 @@ void PingSocket::pingForever() const {
         
         end = getCurrentTime();
         if (!packetLost) {
-            std::cout << "Received Echo" << std::endl << "RTT: " << (end - start) << " milliseconds" << std::endl;
+            std::cout << "Received Echo: " << sizeof(receivedPacket) << " bytes" << std::endl << "RTT: " << (end - start) << " milliseconds" << std::endl;
         }
         else {
             std::cerr << "Ping timeout! Packet Lost/Time Exceeded" << std::endl;
@@ -138,15 +132,6 @@ bool PingSocket::GetHostIP(char *hostname) {
         exit(EXIT_FAILURE);
     }
 
-    /* getaddrinfo() returns a list of address structures.
-              Try each address until ping is successful */
-    
-    // for (struct addrinfo *addr = res; addr != nullptr; addr = addr->ai_next)
-    // {
-    //     getnameinfo(addr->ai_addr, addr->ai_addrlen, ip, sizeof(ip), NULL, 0, NI_NUMERICHOST);
-    //     std::cout << "IP Address: " << ip << std::endl;
-    // }
-    
 
     if (res->ai_family == AF_INET) {
         std::cout << "IPv4" << std::endl;
@@ -214,16 +199,17 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         If the two checksums do not match then an error has occurred.
     */
     if (!useIPv4) {
-        // Special checksum for ipv6
+        // Special checksum instructions for ipv6
+        
         return 0;
     }
     u_int16_t checksum = 0;
- 
-    checksum += packet.type;
-    checksum += packet.code;
+
+    checksum += packet.type_and_code;
     checksum += packet.checksum;
     checksum += packet.id;
     checksum += packet.seqnum;
+
     return ~checksum; // one's complement
 }
 
