@@ -4,8 +4,8 @@
     `make`
 
 ### To run:
-    `./bin/main $(IP ADDRESS) $(PORT NUMBER)` 
-    IP ADDRESS and PORT NUMBER are command line arguments for the server that you are trying to ping
+    `sudo ./bin/main $(HOSTNAME/IP ADDRESS)` 
+    HOSTNAME/IP ADDRESS is the command line argument for the server that you are trying to ping
 
 ### To clean:
     `make clean`

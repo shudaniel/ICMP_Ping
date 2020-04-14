@@ -1,5 +1,5 @@
 
-CC=g++
+CC=g++ -std=c++11
 FLAGS = -Iinclude
 INCLUDE = $(wildcard include/*.h)
 SOURCES = $(wildcard src/*.cpp)
