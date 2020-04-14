@@ -1,32 +1,61 @@
 #include "PingSocket.h"
 
 PingSocket::PingSocket(char * target, long int ttl) {
-    sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
-    if (sockfd < 0) {
-        std::cerr << "Could not create socket" << std::endl;
-        exit(1);
-    }
 
     // First try to convert from a hostname string and set the address
-    if (!dnsGetHostIp(target, &address))
+    if (GetHostIPv4(target))
     {
-        // If target is not a hostname string, check if it is an IP address
-        if (inet_pton(AF_INET, target, &address.sin_addr) <= 0)
+        sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+        if (sockfd < 0)
         {
+            std::cerr << "Could not create socket" << std::endl;
+            exit(1);
+        }
 
+        // Set the TTL value
+        if (setsockopt(sockfd, IPPROTO_IP, IP_TTL,
+                       &ttl, sizeof(ttl)) != 0)
+        {
+            std::cerr << "Setting socket TTL options failed" << std::endl;
+            exit(1);
+        }
+
+        useIPv4 = true;
+    }
+    else {
+        std::cerr << "Not IPv4. Try IPv6" << std::endl;
+        // Check if it is IPv6
+        if (inet_pton(AF_INET6, target, &address6.sin6_addr) <= 0)
+        {
             std::cerr << "Invalid hostname/address error" << std::endl;
             exit(1);
         }
-        address.sin_family = AF_INET;
-        address.sin_port = htons(0); // Port 0
-    }
+        address6.sin6_family = AF_INET6;
+        address6.sin6_port = htons(0); // Port 0
 
-    // Set the TTL value
-    if (setsockopt(sockfd, IPPROTO_IP, IP_TTL,
-                   &ttl, sizeof(ttl)) != 0)
-    {
-        std::cerr << "Setting socket TTL options failed" << std::endl; 
-        exit(1);
+        sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
+        if (sockfd < 0)
+        {   
+            std::cerr << "Could not create socket: " << sockfd << std::endl;
+            exit(1);
+        }
+
+        // // Set the TTL value
+        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
+        //                &ttl, sizeof(ttl)) != 0)
+        // {
+        //     std::cerr << "Setting socket unicast options failed" << std::endl;
+        //     exit(1);
+        // }
+
+        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS,
+        //                &ttl, sizeof(ttl)) != 0)
+        // {
+        //     std::cerr << "Setting socket multicast options failed" << std::endl;
+        //     exit(1);
+        // }
+
+        useIPv4 = false;
     }
 
     // Set the timeout value for receives
@@ -34,7 +63,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
     timeout.tv_sec = 2; // 2 seconds
     timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
-                   (const char *)&timeout, sizeof(timeout)) != 0) 
+                   (const char *)&timeout, sizeof(timeout)) != 0)
     {
         std::cerr << "Setting socket timeout options failed" << std::endl;
         exit(1);
@@ -45,13 +74,28 @@ PingSocket::PingSocket(char * target, long int ttl) {
 void PingSocket::pingForever() const {
     uint64_t start, end;
     bool packetLost = false;
-    struct sockaddr_in stubAddr;  // Store the return address here. It will not be used
+    ssize_t status;
+    struct sockaddr_in stubAddr4; // Store the return address here. It will not be used
+    struct sockaddr_in6 stubAddr6; // Store the return address here. It will not be used
     struct echopacket receivedPacket;
-    socklen_t stubAddrlen = sizeof(stubAddr);
-    unsigned short int seqnum = 1;
+
+    struct sockaddr * pingTargetAddr;
+    socklen_t stublen;
     struct echopacket pingPacket;
-    pingPacket.type = 8;
+    if (useIPv4) {
+        stublen = sizeof(stubAddr4);
+        pingPacket.type = 8;
+        pingTargetAddr = (struct sockaddr *)&address;
+    }
+    else {
+        stublen = sizeof(stubAddr6);
+        pingPacket.type = 128;
+        pingTargetAddr = (struct sockaddr *)&stubAddr6;
+    }
     pingPacket.code = 0;
+
+    unsigned short int seqnum = 1;
+
 
     while (true) {
         std::cout << "Sending ping" << std::endl;
@@ -61,45 +105,49 @@ void PingSocket::pingForever() const {
         pingPacket.checksum = checksum(pingPacket);
 
         start = getCurrentTime();
-        if (sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, (sockaddr *)&address, (socklen_t)sizeof(address)) < 0)
+        status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
+        if (status < 0)
         {
-            std::cerr << "Error in sending ping" << std::endl;
+            std::cerr << "Error in sending ping: " << status << std::endl;
             exit(1);
         }
-        
-        
-        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0,
-                    (struct sockaddr *)&stubAddr, &stubAddrlen) <= 0)
+        else
+        {
+            std::cout << "Packet sent" << std::endl;
+        }
+
+        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
         {
             packetLost = true;
         }
-        
+
         end = getCurrentTime();
         if (!packetLost) {
-            std::cout << "RTT: " << (end - start) << " milliseconds" << std::endl;
+            std::cout << "Received Echo" << std::endl << "RTT: " << (end - start) << " milliseconds" << std::endl;
         }
         else {
-            std::cerr << "Ping timeout! Packet Lost" << std::endl;
+            std::cerr << "Ping timeout! Packet Lost/Time Exceeded" << std::endl;
         }
     
         packetLost = false;
         ++seqnum;
 
+        std::cout << std::endl;
         // Sleep 1 second before pinging again
         sleep(1);
     }
 }
 
-bool PingSocket::dnsGetHostIp(char *hostname, struct sockaddr_in *address) {
+bool PingSocket::GetHostIPv4(char *hostname) {
     struct hostent *host;
     if ((host = gethostbyname(hostname)) == NULL)
     {
         // No ip for hostname
         return false;
     }
-    address->sin_family = host->h_addrtype;
-    address->sin_port = htons(0);
-    address->sin_addr.s_addr = *(long*)host->h_addr;
+    address.sin_family = host->h_addrtype;
+    address.sin_port = htons(0);
+    address.sin_addr.s_addr = *(long*)host->h_addr;
     std::cout << "Connecting to IP Address: " << inet_ntoa(* (struct in_addr *) host->h_addr) << std::endl;
 
     return true;
@@ -121,12 +169,15 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         If the two checksums do not match then an error has occurred.
     */
     u_int16_t checksum = 0;
+    if (!useIPv4) {
+        // For IPv6, you must prepend the pseudo header
 
+    }
+ 
     checksum += packet.type;
     checksum += packet.code;
     checksum += packet.checksum;
     checksum += packet.id;
     checksum += packet.seqnum;
-    
     return ~checksum; // one's complement
 }

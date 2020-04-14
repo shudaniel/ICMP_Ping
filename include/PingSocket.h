@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
+#include <netinet/in.h>
 #include <netinet/ip_icmp.h>
 #include <netdb.h>
 #include <iostream>
@@ -32,8 +33,10 @@ class PingSocket {
         };
 
         int sockfd;
-        struct sockaddr_in address;
-        bool dnsGetHostIp(char *hostname, struct sockaddr_in *address);
+        bool useIPv4;
+        struct sockaddr_in address;    // IPv4
+        struct sockaddr_in6 address6;  // IPv6
+        bool GetHostIPv4(char *hostname);
         uint64_t getCurrentTime() const;
         unsigned short int checksum(struct echopacket packet) const;
 };
