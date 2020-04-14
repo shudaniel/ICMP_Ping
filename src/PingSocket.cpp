@@ -14,7 +14,6 @@ PingSocket::PingSocket(char * target, long int ttl) {
                        &ttl, sizeof(ttl)) != 0)
         {
             std::cerr << "Setting socket TTL options failed" << std::endl;
-            exit(1);
         }
 
     }
@@ -24,7 +23,6 @@ PingSocket::PingSocket(char * target, long int ttl) {
                        &ttl, sizeof(ttl)) != 0)
         {
             std::cerr << "Setting socket hoplimit options failed" << std::endl;
-            exit(1);
         }
 
         // Kernel will calculate checksum
@@ -102,8 +100,8 @@ void PingSocket::pingForever() const {
         ++seqnum;
 
         std::cout << std::endl;
-        // Sleep 1 second before pinging again
-        sleep(1);
+        // Sleep 2 second before pinging again
+        sleep(2);
     }
 }
 
