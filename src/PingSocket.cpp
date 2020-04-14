@@ -57,6 +57,7 @@ void PingSocket::pingForever() const {
         std::cout << "Sending ping" << std::endl;
         pingPacket.id = seqnum;
         pingPacket.seqnum = seqnum;
+        pingPacket.checksum = 0;
         pingPacket.checksum = checksum(pingPacket);
 
         start = getCurrentTime();
@@ -103,8 +104,23 @@ uint64_t PingSocket::getCurrentTime() const {
 
 
 u_int16_t PingSocket::checksum(struct echopacket packet) const {
+    /*
+        ICMP Header Checksum. 16 bits. 
+        The 16-bit one's complement of the one's complement sum of the ICMP message, 
+        starting with the ICMP Type field. When the checksum is computed, the checksum 
+        field should first be cleared to 0. When the data packet is transmitted, the 
+        checksum is computed and inserted into this field. When the data packet is 
+        received, the checksum is again computed and verified against the checksum field. 
+        If the two checksums do not match then an error has occurred.
+    */
     u_int16_t checksum = 0;
 
+    checksum += packet.type;
+    checksum += packet.code;
+    checksum += packet.checksum;
+    checksum += packet.id;
+    checksum += packet.seqnum;
 
-    return checksum;
+
+    return ~checksum;
 }
