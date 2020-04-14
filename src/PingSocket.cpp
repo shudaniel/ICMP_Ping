@@ -240,7 +240,7 @@ bool PingSocket::sendPing(struct echopacket *pingPacket, struct echopacket *rece
     else
     {
         if (printOutput) {
-            std::cout << "Packet sent" << std::endl;
+            std::cout << "Packet sent: " << sizeof(pingPacket) << " bytes" << std::endl;
         }
     }
 
