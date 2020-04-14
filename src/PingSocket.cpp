@@ -198,12 +198,23 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         received, the checksum is again computed and verified against the checksum field. 
         If the two checksums do not match then an error has occurred.
     */
+    u_int16_t checksum = 0;
     if (!useIPv4) {
         // Special checksum instructions for ipv6
-        
-        return 0;
+
+        /*
+            The checksum is the 16-bit one's complement of the one's complement
+            sum of the entire ICMPv6 message, starting with the ICMPv6 message
+            type field, and prepended with a "pseudo-header" of IPv6 header
+            fields, as specified in [IPv6, Section 8.1].  The Next Header value
+            used in the pseudo-header is 58.  (The inclusion of a pseudo-header
+            in the ICMPv6 checksum is a change from IPv4; see [IPv6] for the
+            rationale for this change.)
+        */
+
+       // I am unsure how to get the values in the header to perform this calculation
+
     }
-    u_int16_t checksum = 0;
 
     checksum += packet.type_and_code;
     checksum += packet.checksum;
