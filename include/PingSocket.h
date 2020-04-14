@@ -14,8 +14,6 @@
 #include <unistd.h>
 #include <chrono>
 
-#define PING_PKT_SIZE 128
-
 
 class PingSocket {
     public:
@@ -23,7 +21,7 @@ class PingSocket {
         void pingForever() const;
     private:
         // References:
-        // Echo request format:  https://en.wikipedia.org/wiki/Ping_(networking_utility)#ICMP_packet
+        // Echo request ICMP format:  https://en.wikipedia.org/wiki/Ping_(networking_utility)#ICMP_packet
         // Packet format is also defined here: https://www.cymru.com/Documents/ip_icmp.h
         struct echopacket {
             u_int16_t type_and_code;

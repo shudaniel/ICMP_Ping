@@ -18,24 +18,12 @@ PingSocket::PingSocket(char * target, long int ttl) {
 
     }
     else {
-        // Set the TTL value
-        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_HOPLIMIT,
+
+        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
                        &ttl, sizeof(ttl)) != 0)
         {
             std::cerr << "Setting socket hoplimit options failed" << std::endl;
         }
-
-        // Kernel will calculate checksum
-        // This is only supported on SOCK_RAW
-        // int offset = 2;
-        // int ret = setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset));
-        // if (ret < 0)
-        // {
-        //     std::cerr << "Could not set checksum: " << ret << std::endl;
-        //     exit(1);
-        // }
-        
-
     }
 
     // Set the timeout value for receives
@@ -176,7 +164,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     }
     freeaddrinfo(res); /* No longer needed */
 
-    std::cout << "Connecting to IP Address: " << ip << std::endl;
+    std::cout << "Connected to IP Address: " << ip << std::endl;
 
     return true;
 }
