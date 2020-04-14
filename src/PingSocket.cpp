@@ -61,7 +61,6 @@ PingSocket::PingSocket(char * target, long int ttl) {
 void PingSocket::pingForever() const {
     uint64_t start, end;
     bool packetLost = false;
-    ssize_t status;
     struct sockaddr_in stubAddr4; // Store the return address here. It will not be used
     struct sockaddr_in6 stubAddr6; // Store the return address here. It will not be used
     struct echopacket receivedPacket;
