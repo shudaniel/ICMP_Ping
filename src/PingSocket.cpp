@@ -1,7 +1,9 @@
 #include "PingSocket.h"
 
-PingSocket::PingSocket(char * target, long int ttl) {
+PingSocket::PingSocket(char *target, long int ttl, long int interval)
+{
     m_ttl = ttl;
+    m_interval = interval;
     memset(ip, '0', INET6_ADDRSTRLEN);
     // First try to convert from a hostname string and set the address
     if (!GetHostIP(target)) {
@@ -43,8 +45,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
     }
 }
 
-
-void PingSocket::pingForever() const {
+void PingSocket::pingForever(long int count) const {
     uint64_t start, end;
     bool packetLost = false;
     struct sockaddr_in stubAddr4; // Store the return address here. It will not be used
@@ -73,8 +74,14 @@ void PingSocket::pingForever() const {
 
     unsigned short int seqnum = 1;
     int status;
+    bool pingForever = true;
 
-    while (true) {
+    // Check if ping forever
+    if (count >= 0) {
+        pingForever = false;
+    }
+
+    while (pingForever || count > 0) {
         fprintf(stdout,"Sending ping to %s\n", ip);
         pingPacket.id = seqnum;
         pingPacket.seqnum = seqnum;
@@ -110,8 +117,11 @@ void PingSocket::pingForever() const {
         ++seqnum;
 
         fprintf(stdout, "\n");
-        // Sleep 2 second before pinging again
-        sleep(2);
+        if (!pingForever) {
+            --count;
+        }
+        // Sleep *m_interval* seconds before pinging again
+        sleep(m_interval);
     }
 }
 
