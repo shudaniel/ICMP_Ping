@@ -219,8 +219,15 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
             rationale for this change.)
         */
 
-       // I am unsure how to get the values in the header to perform this calculation
+        // According to : https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_71/apis/ssocko.htm
+        /* 
+            Set if the kernel will calculate and insert a checksum for output and verify the received checksum on input, 
+            discarding the packet if the checksum is in error for this socket. This option is only supported for sockets 
+            with an address family of AF_INET6 and type of SOCK_RAW with a protocol other than IPPROTO_ICMPV6. The checksum 
+            is automatically computed for protocol IPPROTO_ICMPV6.
+        */
 
+        return checksum;
     }
 
     checksum += packet.type_and_code;
