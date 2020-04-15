@@ -22,6 +22,12 @@ PingSocket::PingSocket(char * target, long int ttl) {
         {
             fprintf(stderr, "Setting socket hoplimit options failed\n");
         }
+
+        int offset = 2;
+        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) != 0)
+        {
+            fprintf(stderr, "Setting socket checksum options failed\n");
+        }
     }
 
     // Set the timeout value for receives
