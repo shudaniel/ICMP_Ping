@@ -4,6 +4,7 @@
     `make`
 
 ### To run:
+    Administrator priviledges are required.
     `sudo ./bin/main $(HOSTNAME/IP ADDRESS) [-c count] [-i interval] [-t ttl] [-W timeout]` 
     HOSTNAME/IP ADDRESS is the command line argument for the server that you are trying to ping.
 
