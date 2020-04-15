@@ -122,7 +122,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     memset(&hints, 0, sizeof(struct addrinfo));
 
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_socktype = SOCK_RAW;
     hints.ai_protocol = 0;
     hints.ai_flags = AI_PASSIVE;
     hints.ai_canonname = NULL;
@@ -143,7 +143,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     if (res->ai_family == AF_INET) {
         fprintf(stdout, "IPv4\n");
         useIPv4 = true;
-        sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
+        sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
         if (sockfd < 0)
         {
            fprintf(stderr, "Could not create socket: %i\n", sockfd);
@@ -165,7 +165,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     else if (res->ai_family == AF_INET6) {  
         fprintf(stdout, "IPv6\n");
         useIPv4 = false;
-        sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
+        sockfd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
         if (sockfd < 0)
         {
             fprintf(stderr, "Could not create socket: %i\n", sockfd);
