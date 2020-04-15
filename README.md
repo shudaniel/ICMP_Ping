@@ -4,7 +4,7 @@
     `make`
 
 ### To run:
-    `./bin/main $(HOSTNAME/IP ADDRESS) $(OPTIONAL TTL)` 
+    `sudo ./bin/main $(HOSTNAME/IP ADDRESS) $(OPTIONAL TTL)` 
     HOSTNAME/IP ADDRESS is the command line argument for the server that you are trying to ping.
 
     If you specify OPTIONAL TTL, than that is the TTL value that the packets will have. 
