@@ -34,6 +34,7 @@ class PingSocket {
             u_int16_t checksum;
             u_int16_t id;
             u_int16_t seqnum;
+            u_int16_t message;
         };
         long int m_ttl;
         int sockfd;

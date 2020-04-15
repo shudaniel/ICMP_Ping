@@ -58,13 +58,13 @@ void PingSocket::pingForever(long int count, long int interval) const {
     bool packetLost = false;
     struct sockaddr_in stubAddr4; // Store the return address here. It will not be used
     struct sockaddr_in6 stubAddr6; // Store the return address here. It will not be used
-    struct echopacket receivedPacket;
 
     struct sockaddr *pingTargetAddr;
     struct sockaddr *pingRecvAddr;
     size_t addrlen;
     socklen_t recvaddrlen;
     struct echopacket pingPacket;
+    u_int16_t buffer[5];
     if (useIPv4) {
         recvaddrlen = sizeof(stubAddr4);
         pingRecvAddr = (struct sockaddr *)&stubAddr4;
@@ -93,6 +93,7 @@ void PingSocket::pingForever(long int count, long int interval) const {
         fprintf(stdout,"Sending ping to %s\n", ip);
         pingPacket.id = seqnum;
         pingPacket.seqnum = seqnum;
+        pingPacket.message = seqnum;
         pingPacket.checksum = 0;
         pingPacket.checksum = checksum(pingPacket);
 
@@ -109,7 +110,7 @@ void PingSocket::pingForever(long int count, long int interval) const {
             packetsSent += 1;
         }
 
-        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingRecvAddr, &recvaddrlen) <= 0)
+        if (recvfrom(sockfd, &buffer, sizeof(buffer), 0, pingRecvAddr, &recvaddrlen) <= 0)
         {
             packetLost = true;
         }
@@ -120,7 +121,7 @@ void PingSocket::pingForever(long int count, long int interval) const {
         end = getCurrentTime();
         if (!packetLost) {
             uint64_t rtt = (end - start);
-            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %" PRIu64 " milliseconds\n", sizeof(receivedPacket), rtt);
+            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %" PRIu64 " milliseconds\n", sizeof(buffer), rtt);
             avgRtt += rtt;
             if (packetsRecv == 1) {
                 minRtt = rtt;
@@ -296,6 +297,7 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     checksum += packet.checksum;
     checksum += packet.id;
     checksum += packet.seqnum;
+    checksum += packet.message;
 
     return ~checksum; // one's complement
 }
