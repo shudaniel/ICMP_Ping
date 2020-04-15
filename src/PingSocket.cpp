@@ -10,19 +10,17 @@ PingSocket::PingSocket(char * target, long int ttl) {
     if (useIPv4)
     {
         // Set the TTL value
-        if (setsockopt(sockfd, IPPROTO_IP, IP_TTL,
-                       &ttl, sizeof(ttl)) != 0)
+        if (setsockopt(sockfd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) != 0)
         {
-            std::cerr << "Setting socket TTL options failed" << std::endl;
+            fprintf(stderr, "Setting socket TTL options failed\n");
         }
 
     }
     else {
 
-        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_UNICAST_HOPS,
-                       &ttl, sizeof(ttl)) != 0)
+        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_UNICAST_HOPS, &ttl, sizeof(ttl)) != 0)
         {
-            std::cerr << "Setting socket hoplimit options failed" << std::endl;
+            fprintf(stderr, "Setting socket hoplimit options failed\n");
         }
     }
 
@@ -33,7 +31,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
                    (const char *)&timeout, sizeof(timeout)) != 0)
     {
-        std::cerr << "Setting socket timeout options failed" << std::endl;
+        fprintf(stderr, "Setting socket timeout options failed\n");
         exit(1);
     }
 }
@@ -64,7 +62,7 @@ void PingSocket::pingForever() const {
     int status;
 
     while (true) {
-        std::cout << "Sending ping" << std::endl;
+        fprintf(stdout,"Sending ping\n");
         pingPacket.id = seqnum;
         pingPacket.seqnum = seqnum;
         pingPacket.checksum = 0;
@@ -75,11 +73,11 @@ void PingSocket::pingForever() const {
         status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
         if (status < 0)
         {
-            std::cerr << "Error in sending ping: " << status << std::endl;
+            fprintf(stderr, "Error in sending ping: %i\n", status);
         }
         else
         {
-            std::cout << "Packet sent: " << sizeof(pingPacket) << " bytes" << std::endl;
+            fprintf(stderr, "Packet sent: %lu bytes\n", sizeof(pingPacket));
         }
 
         if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
@@ -89,16 +87,16 @@ void PingSocket::pingForever() const {
         
         end = getCurrentTime();
         if (!packetLost) {
-            std::cout << "Received Echo: " << sizeof(receivedPacket) << " bytes" << std::endl << "RTT: " << (end - start) << " milliseconds" << std::endl;
+            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %lui milliseconds\n", sizeof(receivedPacket), (end - start));
         }
         else {
-            std::cerr << "Ping timeout! Packet Lost/Time Exceeded" << std::endl;
+            fprintf(stderr, "Ping timeout! Packet Lost/Time Exceeded\n");;
         }
     
         packetLost = false;
         ++seqnum;
 
-        std::cout << std::endl;
+        fprintf(stdout, "\n");
         // Sleep 2 second before pinging again
         sleep(2);
     }
@@ -131,12 +129,12 @@ bool PingSocket::GetHostIP(char *hostname) {
 
 
     if (res->ai_family == AF_INET) {
-        std::cout << "IPv4" << std::endl;
+        fprintf(stdout, "IPv4\n");
         useIPv4 = true;
         sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
         if (sockfd < 0)
         {
-            std::cerr << "Could not create socket: " << sockfd << std::endl;
+           fprintf(stderr, "Could not create socket: %i\n", sockfd);
             exit(1);
         }
 
@@ -147,18 +145,18 @@ bool PingSocket::GetHostIP(char *hostname) {
         if (inet_pton(AF_INET, ip, &address.sin_addr) <= 0)
         {
 
-            std::cerr << "Invalid hostname/address error" << std::endl;
+            fprintf(stderr, "Invalid hostname/address error\n");
             exit(1);
         }
 
     }
-    else {  
-        std::cout << "IPv6" << std::endl;
+    else if (res->ai_family == AF_INET6) {  
+        fprintf(stdout, "IPv6\n");
         useIPv4 = false;
         sockfd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
         if (sockfd < 0)
         {
-            std::cerr << "Could not create socket: " << sockfd << std::endl;
+            fprintf(stderr, "Could not create socket: %i\n", sockfd);
             exit(1);
         }
 
@@ -169,19 +167,25 @@ bool PingSocket::GetHostIP(char *hostname) {
         if (inet_pton(AF_INET6, ip, &address6.sin6_addr) <= 0)
         {
 
-            std::cerr << "Invalid hostname/address error" << std::endl;
+            fprintf(stderr, "Invalid hostname/address error\n");
             exit(1);
         }
     }
+    else {
+        fprintf(stderr, "Could not connect\n");
+        exit(EXIT_FAILURE);
+    }
     freeaddrinfo(res); /* No longer needed */
 
-    std::cout << "Connected to IP Address: " << ip << std::endl;
+    fprintf(stdout, "Connected to IP Address: %s\n",ip);
 
     return true;
 }
 
 uint64_t PingSocket::getCurrentTime() const {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return time.tv_sec * 1000 + (time.tv_usec / 1000);
 }
 
 

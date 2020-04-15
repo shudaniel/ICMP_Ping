@@ -9,12 +9,11 @@
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netdb.h>
-#include <iostream>
 #include <string.h>
-#include <string>
 #include <unistd.h>
-#include <chrono>
+#include <sys/time.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 class PingSocket {
     public:
