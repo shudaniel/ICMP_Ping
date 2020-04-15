@@ -24,12 +24,11 @@ PingSocket::PingSocket(char * target, long int ttl) {
             fprintf(stderr, "Setting socket hoplimit options failed\n");
         }
 
-        // This doesnt seem to work. The checksum is not automattically computed
-        // int offset = 2;
-        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) != 0)
-        // {
-        //     fprintf(stderr, "Setting socket checksum options failed\n");
-        // }
+        int offset = 2;
+        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) != 0)
+        {
+            fprintf(stderr, "Setting socket checksum options failed\n");
+        }
     }
 
     // Set the timeout value for receives
@@ -123,7 +122,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     memset(&hints, 0, sizeof(struct addrinfo));
 
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_RAW;
+    hints.ai_socktype = SOCK_DGRAM;
     hints.ai_protocol = 0;
     hints.ai_flags = AI_PASSIVE;
     hints.ai_canonname = NULL;
@@ -144,7 +143,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     if (res->ai_family == AF_INET) {
         fprintf(stdout, "IPv4\n");
         useIPv4 = true;
-        sockfd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+        sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
         if (sockfd < 0)
         {
            fprintf(stderr, "Could not create socket: %i\n", sockfd);
@@ -166,7 +165,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     else if (res->ai_family == AF_INET6) {  
         fprintf(stdout, "IPv6\n");
         useIPv4 = false;
-        sockfd = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+        sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_ICMPV6);
         if (sockfd < 0)
         {
             fprintf(stderr, "Could not create socket: %i\n", sockfd);
@@ -215,7 +214,7 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     u_int16_t checksum = 0;
     if (!useIPv4) {
         // Special checksum instructions for ipv6
-
+        return 0;
         /*
             The checksum is the 16-bit one's complement of the one's complement
             sum of the entire ICMPv6 message, starting with the ICMPv6 message
