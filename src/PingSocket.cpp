@@ -1,7 +1,7 @@
 #include "PingSocket.h"
 
 PingSocket::PingSocket(char * target, long int ttl) {
-
+    this->ttl = ttl;
     // First try to convert from a hostname string and set the address
     if (!GetHostIP(target)) {
         exit(1);
@@ -90,7 +90,7 @@ void PingSocket::pingForever() const {
         }
         else
         {
-            fprintf(stderr, "Packet sent: %lu bytes\n", sizeof(pingPacket));
+            fprintf(stderr, "Packet sent: %lu bytes, Seq Num: %i, TTL: %li\n", sizeof(pingPacket), seqnum, ttl);
         }
 
         if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingRecvAddr, &recvaddrlen) <= 0)
@@ -234,6 +234,7 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         checksum += 0xffff;
 
         // STUB: Set source address as 0.0.0.0
+        checksum += 0x0000;
         checksum += 0x0000;
 
         // 128 bit destination address

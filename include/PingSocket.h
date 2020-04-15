@@ -30,7 +30,7 @@ class PingSocket {
             u_int16_t id;
             u_int16_t seqnum;
         };
-
+        long int ttl;
         int sockfd;
         bool useIPv4;
         struct sockaddr_in address;    // IPv4
