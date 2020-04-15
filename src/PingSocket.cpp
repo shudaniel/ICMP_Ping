@@ -1,7 +1,8 @@
 #include "PingSocket.h"
 
 PingSocket::PingSocket(char * target, long int ttl) {
-    this->ttl = ttl;
+    m_ttl = ttl;
+    memset(ip, '0', INET6_ADDRSTRLEN);
     // First try to convert from a hostname string and set the address
     if (!GetHostIP(target)) {
         exit(1);
@@ -75,7 +76,7 @@ void PingSocket::pingForever() const {
     int status;
 
     while (true) {
-        fprintf(stdout,"Sending ping\n");
+        fprintf(stdout,"Sending ping to %s\n", ip);
         pingPacket.id = seqnum;
         pingPacket.seqnum = seqnum;
         pingPacket.checksum = 0;
@@ -90,7 +91,7 @@ void PingSocket::pingForever() const {
         }
         else
         {
-            fprintf(stderr, "Packet sent: %lu bytes, Seq Num: %i, TTL: %li\n", sizeof(pingPacket), seqnum, ttl);
+            fprintf(stderr, "Packet sent: %lu bytes, Seq Num: %i, TTL: %li\n", sizeof(pingPacket), seqnum, m_ttl);
         }
 
         if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingRecvAddr, &recvaddrlen) <= 0)
@@ -118,7 +119,6 @@ void PingSocket::pingForever() const {
 bool PingSocket::GetHostIP(char *hostname) {
     struct addrinfo hints;
     struct addrinfo *res;
-    char ip[INET6_ADDRSTRLEN] = {0};
 
     memset(&hints, 0, sizeof(struct addrinfo));
 
@@ -233,9 +233,9 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
 
         checksum += 0xffff;
 
-        // STUB: Set source address as 0.0.0.0
-        checksum += 0x0000;
-        checksum += 0x0000;
+        // STUB: Set source address as 127.0.0.1
+        checksum += 0x7f00;
+        checksum += 0x0001;
 
         // 128 bit destination address
         // Split this up into 8 16-bit words

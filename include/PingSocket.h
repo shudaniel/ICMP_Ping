@@ -30,9 +30,10 @@ class PingSocket {
             u_int16_t id;
             u_int16_t seqnum;
         };
-        long int ttl;
+        long int m_ttl;
         int sockfd;
         bool useIPv4;
+        char ip[INET6_ADDRSTRLEN];
         struct sockaddr_in address;    // IPv4
         struct sockaddr_in6 address6;  // IPv6
         bool GetHostIP(char *hostname);
