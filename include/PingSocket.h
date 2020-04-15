@@ -4,6 +4,7 @@
 #define __APPLE_USE_RFC_3542
 
 #include <sys/types.h>
+#include <inttypes.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>

@@ -9,7 +9,10 @@
 
     If you specify OPTIONAL TTL, than that is the TTL value that the packets will have. 
     
-    Any additional command line arguments afterwards will be ignored
+    Any additional command line arguments afterwards will be ignored.
+
+    Each ping request has a 3 second timeout. One ping is sent every 2 seconds.
 
 ### To clean:
     `make clean`
+

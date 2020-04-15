@@ -26,7 +26,7 @@ PingSocket::PingSocket(char * target, long int ttl) {
 
     // Set the timeout value for receives
     struct timeval timeout;
-    timeout.tv_sec = 2; // 2 seconds
+    timeout.tv_sec = 3; // 3 seconds
     timeout.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
                    (const char *)&timeout, sizeof(timeout)) != 0)
@@ -93,7 +93,7 @@ void PingSocket::pingForever() const {
         
         end = getCurrentTime();
         if (!packetLost) {
-            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %llu milliseconds\n", sizeof(receivedPacket), (end - start));
+            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %" PRIu64 " milliseconds\n", sizeof(receivedPacket), (end - start));
         }
         else {
             fprintf(stderr, "Ping timeout! Packet Lost/Time Exceeded\n");;
