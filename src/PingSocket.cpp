@@ -47,6 +47,11 @@ PingSocket::PingSocket(char *target, long int ttl, long int interval)
 
 void PingSocket::pingForever(long int count) const {
     uint64_t start, end;
+    unsigned long packetsSent = 0;
+    unsigned long packetsRecv = 0;
+    uint64_t avgRtt = 0;
+    uint64_t minRtt = 0;
+    uint64_t maxRtt = 0;
     bool packetLost = false;
     struct sockaddr_in stubAddr4; // Store the return address here. It will not be used
     struct sockaddr_in6 stubAddr6; // Store the return address here. It will not be used
@@ -98,16 +103,34 @@ void PingSocket::pingForever(long int count) const {
         else
         {
             fprintf(stderr, "Packet sent: %lu bytes, Seq Num: %i, TTL: %li\n", sizeof(pingPacket), seqnum, m_ttl);
+            packetsSent += 1;
         }
 
         if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingRecvAddr, &recvaddrlen) <= 0)
         {
             packetLost = true;
         }
+        else {
+            packetsRecv += 1;
+        }
         
         end = getCurrentTime();
         if (!packetLost) {
-            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %" PRIu64 " milliseconds\n", sizeof(receivedPacket), (end - start));
+            uint64_t rtt = (end - start);
+            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %" PRIu64 " milliseconds\n", sizeof(receivedPacket), rtt);
+            avgRtt += rtt;
+            if (packetsRecv == 1) {
+                minRtt = rtt;
+                maxRtt =rtt;
+            }
+            else {
+                if (rtt > maxRtt) {
+                    maxRtt = rtt;
+                }
+                else if (rtt < minRtt) {
+                    minRtt = rtt;
+                }
+            }
         }
         else {
             fprintf(stderr, "Ping timeout! Packet Lost/Time Exceeded\n");;
@@ -123,6 +146,14 @@ void PingSocket::pingForever(long int count) const {
         // Sleep *m_interval* seconds before pinging again
         sleep(m_interval);
     }
+
+    // Print the results
+    fprintf(stdout, "--- %s ping statistics ---\n", ip);
+    fprintf(stdout, "%lu packets transmitted, %lu packets received\n", packetsSent, packetsRecv );
+    if (packetsRecv > 0) {
+        avgRtt = avgRtt / packetsRecv;
+    }
+    fprintf(stdout, "RTT min/max/avg = %" PRIu64 "/%" PRIu64 "/%" PRIu64" milliseconds\n", minRtt, maxRtt, avgRtt);
 }
 
 bool PingSocket::GetHostIP(char *hostname) {
