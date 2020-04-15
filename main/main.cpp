@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
                 if (i + 1 < argc) {
                     // Check that this is a number
                     ttl = strtol(argv[i + 1], NULL, 10);
-                    if (ttl <= 0 || ttl > 255)
+                    if (strcmp(argv[i+1], "0") != 0 && (ttl <= 0 || ttl > 255))
                     {
                         fprintf(stderr, "Invalid TTL specified. TTL will be 64\n");
                         ttl = DEFAULT_TTL;
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
                 {
                     // Check that this is a number
                     count = strtol(argv[i + 1], NULL, 10);
-                    if (count <= 0)
+                    if (strcmp(argv[i + 1], "0") != 0 && count <= 0)
                     {
                         fprintf(stderr, "Invalid count specified\n");
                         count = -1;
@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
                 {
                     // Check that this is a number
                     interval = strtol(argv[i + 1], NULL, 10);
-                    if (interval <= 0)
+                    if (strcmp(argv[i + 1], "0") != 0 && interval <= 0)
                     {
                         fprintf(stderr, "Invalid interval specified. Interval will be 1 second\n");
                         interval = DEFAULT_INTERVAL;
