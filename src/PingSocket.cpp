@@ -96,7 +96,6 @@ void PingSocket::pingForever(long int count, long int interval) const {
         pingPacket.message = seqnum;
         pingPacket.checksum = 0;
         pingPacket.checksum = checksum(pingPacket);
-
         start = getCurrentTime();
 
         status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, addrlen);
@@ -147,6 +146,7 @@ void PingSocket::pingForever(long int count, long int interval) const {
         if (!pingForever) {
             --count;
         }
+        memset(buffer, 0, sizeof(u_int16_t) * 5);
         // Sleep *interval* seconds before pinging again
         sleep(interval);
     }
@@ -256,7 +256,7 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
         received, the checksum is again computed and verified against the checksum field. 
         If the two checksums do not match then an error has occurred.
     */
-    u_int16_t checksum = 0;
+    u_int32_t checksum = 0;
     if (!useIPv4) {
         // Special checksum instructions for ipv6
         /*
@@ -286,8 +286,8 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
             checksum += (u_int16_t)address6.sin6_addr.s6_addr[i * 2];
         }
 
-        // Packet length: 40 bytes header + 8 bytes for packet
-        checksum += 48;
+        // Packet length: 40 bytes header + 10 bytes for packet
+        checksum += 50;
 
         // Next Header is 58
         checksum += 58;
@@ -299,5 +299,9 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     checksum += packet.seqnum;
     checksum += packet.message;
 
-    return ~checksum; // one's complement
+    checksum = (checksum >> 16) + (checksum & 0xFFFF);
+    checksum += (checksum >> 16);
+    u_int16_t result = ~checksum;
+    
+    return result; // one's complement
 }
