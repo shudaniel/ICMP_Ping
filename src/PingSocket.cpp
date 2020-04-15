@@ -214,7 +214,6 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     u_int16_t checksum = 0;
     if (!useIPv4) {
         // Special checksum instructions for ipv6
-        return 0;
         /*
             The checksum is the 16-bit one's complement of the one's complement
             sum of the entire ICMPv6 message, starting with the ICMPv6 message
