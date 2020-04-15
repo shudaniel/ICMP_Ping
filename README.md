@@ -1,4 +1,4 @@
-# cloudflare2020_application
+# ICMP_Ping
 
 ### To compile:
     `make`
