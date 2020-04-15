@@ -23,11 +23,12 @@ PingSocket::PingSocket(char * target, long int ttl) {
             fprintf(stderr, "Setting socket hoplimit options failed\n");
         }
 
-        int offset = 2;
-        if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) != 0)
-        {
-            fprintf(stderr, "Setting socket checksum options failed\n");
-        }
+        // This doesnt seem to work. The checksum is not automattically computed
+        // int offset = 2;
+        // if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_CHECKSUM, &offset, sizeof(offset)) != 0)
+        // {
+        //     fprintf(stderr, "Setting socket checksum options failed\n");
+        // }
     }
 
     // Set the timeout value for receives
@@ -225,15 +226,27 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
             rationale for this change.)
         */
 
-        // According to : https://www.ibm.com/support/knowledgecenter/en/ssw_ibm_i_71/apis/ssocko.htm
-        /* 
-            Set if the kernel will calculate and insert a checksum for output and verify the received checksum on input, 
-            discarding the packet if the checksum is in error for this socket. This option is only supported for sockets 
-            with an address family of AF_INET6 and type of SOCK_RAW with a protocol other than IPPROTO_ICMPV6. The checksum 
-            is automatically computed for protocol IPPROTO_ICMPV6.
-        */
+       
+        // 128 bit source address
+        // For this, I will convert the IPv4 address to IPv6
+        // 0:0:0:0:0:ffff:ipv4
 
-        return checksum;
+        checksum += 0xffff;
+
+        // STUB: Set source address as 0.0.0.0
+        checksum += 0x0000;
+
+        // 128 bit destination address
+        // Split this up into 8 16-bit words
+        for(int i = 0; i < 8; ++i) {
+            checksum += (u_int16_t)address6.sin6_addr.s6_addr[i * 2];
+        }
+
+        // Packet length: 40 bytes header + 8 bytes for packet
+        checksum += 48;
+
+        // Next Header is 58
+        checksum += 58;
     }
 
     checksum += packet.type_and_code;
