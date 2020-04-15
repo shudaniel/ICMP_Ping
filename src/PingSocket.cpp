@@ -37,7 +37,6 @@ PingSocket::PingSocket(char *target, long int ttl, unsigned int timeoutval)
 
     unsigned int timeout_seconds = timeoutval / 1000;
     unsigned int timeout_microseconds = (timeoutval - (timeout_seconds * 1000)) * 1000;
-    fprintf(stdout, "TImeout: %u / %u\n", timeout_seconds, timeout_microseconds);
 
     timeout.tv_sec = timeout_seconds; // 3 seconds
     timeout.tv_usec = timeout_microseconds;
