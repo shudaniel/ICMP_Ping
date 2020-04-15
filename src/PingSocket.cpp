@@ -30,6 +30,11 @@ PingSocket::PingSocket(char *target, long int ttl, unsigned int timeoutval)
         {
             fprintf(stderr, "Setting socket checksum options failed\n");
         }
+
+        size_t bufsize = sizeof(struct echopacket);
+        if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, &bufsize, sizeof(bufsize)) != 0) {
+            fprintf(stderr, "Failed to set recv buffer size\n");
+        }
     }
 
     // Set the timeout value for receives
