@@ -1,4 +1,3 @@
-
 CC=g++
 FLAGS = -std=c++11 -Wall -Iinclude
 INCLUDE = $(wildcard include/*.h)

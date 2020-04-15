@@ -37,8 +37,7 @@ class PingSocket {
         struct sockaddr_in6 address6;  // IPv6
         bool GetHostIP(char *hostname);
         uint64_t getCurrentTime() const;
-        unsigned short int checksum(struct echopacket packet) const;
-        bool sendPing(struct echopacket *packet, struct echopacket *receivedPacket, sockaddr *pingTargetAddr, socklen_t len, bool printOutput) const;
+        u_int16_t checksum(struct echopacket packet) const;
 };
 
 #endif

@@ -61,7 +61,7 @@ void PingSocket::pingForever() const {
     }
 
     unsigned short int seqnum = 1;
-
+    int status;
 
     while (true) {
         std::cout << "Sending ping" << std::endl;
@@ -72,7 +72,18 @@ void PingSocket::pingForever() const {
 
         start = getCurrentTime();
 
-        if (!sendPing(&pingPacket, &receivedPacket, pingTargetAddr, stublen, true)) {
+        status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
+        if (status < 0)
+        {
+            std::cerr << "Error in sending ping: " << status << std::endl;
+        }
+        else
+        {
+            std::cout << "Packet sent: " << sizeof(pingPacket) << " bytes" << std::endl;
+        }
+
+        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
+        {
             packetLost = true;
         }
         
@@ -101,7 +112,7 @@ bool PingSocket::GetHostIP(char *hostname) {
     memset(&hints, 0, sizeof(struct addrinfo));
 
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = 0;
+    hints.ai_socktype = SOCK_RAW;
     hints.ai_protocol = 0;
     hints.ai_flags = AI_PASSIVE;
     hints.ai_canonname = NULL;
@@ -208,28 +219,4 @@ u_int16_t PingSocket::checksum(struct echopacket packet) const {
     checksum += packet.seqnum;
 
     return ~checksum; // one's complement
-}
-
-bool PingSocket::sendPing(struct echopacket *pingPacket, struct echopacket *receivedPacket, sockaddr *pingTargetAddr, socklen_t len, bool printOutput) const
-{
-    int status = sendto(sockfd, pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
-    if (status < 0)
-    {
-        if (printOutput) {
-            std::cerr << "Error in sending ping: " << status << std::endl;
-        }
-        return false;
-    }
-    else
-    {
-        if (printOutput) {
-            std::cout << "Packet sent: " << sizeof(pingPacket) << " bytes" << std::endl;
-        }
-    }
-
-    if (recvfrom(sockfd, receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &len) <= 0)
-    {
-        return false;
-    }
-    return true;
 }
