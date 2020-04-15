@@ -45,17 +45,23 @@ void PingSocket::pingForever() const {
     struct echopacket receivedPacket;
 
     struct sockaddr *pingTargetAddr;
-    socklen_t stublen;
+    struct sockaddr *pingRecvAddr;
+    size_t addrlen;
+    socklen_t recvaddrlen;
     struct echopacket pingPacket;
     if (useIPv4) {
-        stublen = sizeof(stubAddr4);
+        recvaddrlen = sizeof(stubAddr4);
+        pingRecvAddr = (struct sockaddr *)&stubAddr4;
         pingPacket.type_and_code = 8;
         pingTargetAddr = (struct sockaddr *)&address;
+        addrlen = sizeof(address);
     }
     else {
-        stublen = sizeof(stubAddr6);
+        recvaddrlen = sizeof(stubAddr6);
+        pingRecvAddr = (struct sockaddr *)&stubAddr6;
         pingPacket.type_and_code = 128;
         pingTargetAddr = (struct sockaddr *)&address6;
+        addrlen = sizeof(address6);
     }
 
     unsigned short int seqnum = 1;
@@ -70,7 +76,7 @@ void PingSocket::pingForever() const {
 
         start = getCurrentTime();
 
-        status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, (socklen_t)sizeof(pingTargetAddr));
+        status = sendto(sockfd, &pingPacket, sizeof(pingPacket), 0, pingTargetAddr, addrlen);
         if (status < 0)
         {
             fprintf(stderr, "Error in sending ping: %i\n", status);
@@ -80,7 +86,7 @@ void PingSocket::pingForever() const {
             fprintf(stderr, "Packet sent: %lu bytes\n", sizeof(pingPacket));
         }
 
-        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingTargetAddr, &stublen) <= 0)
+        if (recvfrom(sockfd, &receivedPacket, sizeof(receivedPacket), 0, pingRecvAddr, &recvaddrlen) <= 0)
         {
             packetLost = true;
         }
