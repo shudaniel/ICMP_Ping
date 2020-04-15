@@ -18,10 +18,11 @@
 
 #define DEFAULT_INTERVAL 1
 #define DEFAULT_TTL 64
+#define DEFAULT_TIMEOUT 2000;
 
 class PingSocket {
     public:
-        PingSocket(char * target, long int ttl);
+        PingSocket(char * target, long int ttl, unsigned int timeout);
         void pingForever(long int count, long int interval) const;
 
     private:

@@ -9,6 +9,7 @@ int main(int argc, char** argv) {
     long int count = -1;
     long int ttl = DEFAULT_TTL;
     long int interval = DEFAULT_INTERVAL;
+    unsigned int timeout = DEFAULT_TIMEOUT;
     if (argc >= 3) {
         for(int i = 2; i < argc; ++i) {
 
@@ -63,12 +64,28 @@ int main(int argc, char** argv) {
                     }
                 }
             }
-
-            
+            if (strcmp(argv[i], "-W") == 0)
+            {
+                if (i + 1 < argc)
+                {
+                    // Check that this is a number
+                    timeout = strtol(argv[i + 1], NULL, 10);
+                    if (strcmp(argv[i + 1], "0") != 0 && timeout <= 0)
+                    {
+                        fprintf(stderr, "Invalid timeout specified. Timeout will be 1 second.\n");
+                        timeout = DEFAULT_TIMEOUT;
+                    }
+                    else
+                    {
+                        fprintf(stderr, "Timeout: %u milliseconds\n", timeout);
+                        ++i;
+                    }
+                }
+            }
         } 
     }
-    
-    PingSocket socket = PingSocket(argv[1], ttl);
+
+    PingSocket socket = PingSocket(argv[1], ttl, timeout);
     fprintf(stderr, "Created socket\n");
     socket.pingForever(count, interval);
     return 0;

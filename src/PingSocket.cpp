@@ -1,6 +1,6 @@
 #include "PingSocket.h"
 
-PingSocket::PingSocket(char *target, long int ttl)
+PingSocket::PingSocket(char *target, long int ttl, unsigned int timeoutval)
 {
     m_ttl = ttl;
     memset(ip, '0', INET6_ADDRSTRLEN);
@@ -34,8 +34,13 @@ PingSocket::PingSocket(char *target, long int ttl)
 
     // Set the timeout value for receives
     struct timeval timeout;
-    timeout.tv_sec = 3; // 3 seconds
-    timeout.tv_usec = 0;
+
+    unsigned int timeout_seconds = timeoutval / 1000;
+    unsigned int timeout_microseconds = (timeoutval - (timeout_seconds * 1000)) * 1000;
+    fprintf(stdout, "TImeout: %u / %u\n", timeout_seconds, timeout_microseconds);
+
+    timeout.tv_sec = timeout_seconds; // 3 seconds
+    timeout.tv_usec = timeout_microseconds;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,
                    (const char *)&timeout, sizeof(timeout)) != 0)
     {
