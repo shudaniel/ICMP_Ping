@@ -13,7 +13,8 @@
 
 ### Flags:
     `   
-    Flags may be specified in any order, as long as they all come AFTER the hostname/IP address
+    Flags may be specified in any order, as long as they all come AFTER the hostname/IP address.  
+    Ensure that there is always a space between the flag and its value.
 
     [-c count]  Send exactly *count* ECHO_REQUEST packets. If not specified, ping will send forever
 
