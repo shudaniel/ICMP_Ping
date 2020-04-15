@@ -87,7 +87,7 @@ void PingSocket::pingForever() const {
         
         end = getCurrentTime();
         if (!packetLost) {
-            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %lui milliseconds\n", sizeof(receivedPacket), (end - start));
+            fprintf(stdout, "Received Echo: %lu bytes\nRTT: %llu milliseconds\n", sizeof(receivedPacket), (end - start));
         }
         else {
             fprintf(stderr, "Ping timeout! Packet Lost/Time Exceeded\n");;
