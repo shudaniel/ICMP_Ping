@@ -21,8 +21,9 @@
 
 class PingSocket {
     public:
-        PingSocket(char * target, long int ttl, long int interval);
-        void pingForever(long int count) const;
+        PingSocket(char * target, long int ttl);
+        void pingForever(long int count, long int interval) const;
+
     private:
         // References:
         // Echo request ICMP format:  https://en.wikipedia.org/wiki/Ping_(networking_utility)#ICMP_packet
@@ -35,7 +36,6 @@ class PingSocket {
         };
         long int m_ttl;
         int sockfd;
-        long int m_interval;
         bool useIPv4;
         char ip[INET6_ADDRSTRLEN];
         struct sockaddr_in address;    // IPv4

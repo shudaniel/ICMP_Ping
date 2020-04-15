@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
         } 
     }
     
-    PingSocket socket = PingSocket(argv[1], ttl, interval);
+    PingSocket socket = PingSocket(argv[1], ttl);
     fprintf(stderr, "Created socket\n");
-    socket.pingForever(count);
+    socket.pingForever(count, interval);
     return 0;
 }

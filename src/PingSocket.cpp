@@ -1,9 +1,8 @@
 #include "PingSocket.h"
 
-PingSocket::PingSocket(char *target, long int ttl, long int interval)
+PingSocket::PingSocket(char *target, long int ttl)
 {
     m_ttl = ttl;
-    m_interval = interval;
     memset(ip, '0', INET6_ADDRSTRLEN);
     // First try to convert from a hostname string and set the address
     if (!GetHostIP(target)) {
@@ -45,7 +44,7 @@ PingSocket::PingSocket(char *target, long int ttl, long int interval)
     }
 }
 
-void PingSocket::pingForever(long int count) const {
+void PingSocket::pingForever(long int count, long int interval) const {
     uint64_t start, end;
     unsigned long packetsSent = 0;
     unsigned long packetsRecv = 0;
@@ -143,8 +142,8 @@ void PingSocket::pingForever(long int count) const {
         if (!pingForever) {
             --count;
         }
-        // Sleep *m_interval* seconds before pinging again
-        sleep(m_interval);
+        // Sleep *interval* seconds before pinging again
+        sleep(interval);
     }
 
     // Print the results
